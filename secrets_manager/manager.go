@@ -1,0 +1,3 @@
+package secretsmanager
+
+func main() {}

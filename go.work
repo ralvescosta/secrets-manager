@@ -1,1 +1,6 @@
 go 1.18
+
+use (
+  ./secrets_manager
+  ./example_project
+)
