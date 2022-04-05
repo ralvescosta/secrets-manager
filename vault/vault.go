@@ -1,0 +1,3 @@
+package vault
+
+func main() {}

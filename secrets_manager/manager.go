@@ -1,3 +1,0 @@
-package secretsmanager
-
-func main() {}
