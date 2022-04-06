@@ -1,6 +1,6 @@
 go 1.18
 
 use (
-  ./vault
-  ./example_project
+	./example_project
+	./vault
 )
