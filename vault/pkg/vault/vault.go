@@ -13,13 +13,15 @@ import (
 	"time"
 )
 
-var filePath = "../example_project/.env.development"
-var vaultSeparator = "$vault."
-var pathKeyValueSeparator = "."
-var kvVersion = "1"
-var vaultHost = "http://localhost:8200"
-var vaultToken = "hvs.xBXPKs1UKyXqKbMCBbdWHGlg"
-var fileKeyValueSeparator = "= "
+type Configs struct {
+	FilePath              string
+	VaultSeparator        string
+	PathKeyValueSeparator string
+	KVVersion             string
+	VaultHost             string
+	VaultToken            string
+	FileKeyValueSeparator string
+}
 
 type environment struct {
 	vaultKey   string
@@ -27,23 +29,23 @@ type environment struct {
 	replacer   string
 }
 
-func Run() {
-	envs, err := readEnvFile()
+func Run(configs *Configs) {
+	envs, err := readEnvFile(configs)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := getVaultSecrets(envs); err != nil {
+	if err := getVaultSecrets(configs, envs); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := updateEnvFile(envs); err != nil {
+	if err := updateEnvFile(configs, envs); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func readEnvFile() (map[string][]*environment, error) {
-	file, err := os.Open(filePath)
+func readEnvFile(cfs *Configs) (map[string][]*environment, error) {
+	file, err := os.Open(cfs.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("[secretsManager::vault] - io error: %v", err.Error())
 	}
@@ -55,8 +57,8 @@ func readEnvFile() (map[string][]*environment, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
-		env := strings.Split(line, vaultSeparator)
-		pathAndKey := strings.Split(env[1], pathKeyValueSeparator)
+		env := strings.Split(line, cfs.VaultSeparator)
+		pathAndKey := strings.Split(env[1], cfs.PathKeyValueSeparator)
 
 		vaultPath := ""
 		for i, v := range pathAndKey {
@@ -71,7 +73,7 @@ func readEnvFile() (map[string][]*environment, error) {
 
 		envs[pathAndKey[0]] = append(envs[pathAndKey[0]], &environment{
 			vaultKey: pathAndKey[len(pathAndKey)-1],
-			replacer: strings.Split(line, fileKeyValueSeparator)[1],
+			replacer: strings.Split(line, cfs.FileKeyValueSeparator)[1],
 		})
 	}
 	if scanner.Err() != nil {
@@ -81,9 +83,9 @@ func readEnvFile() (map[string][]*environment, error) {
 	return envs, nil
 }
 
-func getVaultSecrets(envs map[string][]*environment) error {
+func getVaultSecrets(cfs *Configs, envs map[string][]*environment) error {
 	for key, values := range envs {
-		res, err := getKeys(key)
+		res, err := getKeys(cfs, key)
 		if err != nil {
 			return err
 		}
@@ -100,8 +102,8 @@ func getVaultSecrets(envs map[string][]*environment) error {
 	return nil
 }
 
-func updateEnvFile(envs map[string][]*environment) error {
-	file, err := ioutil.ReadFile(filePath)
+func updateEnvFile(cfs *Configs, envs map[string][]*environment) error {
+	file, err := ioutil.ReadFile(cfs.FilePath)
 	if err != nil {
 		return fmt.Errorf("[secretsManager::vault] - io error: %v", err.Error())
 	}
@@ -112,7 +114,7 @@ func updateEnvFile(envs map[string][]*environment) error {
 		}
 	}
 
-	if err = ioutil.WriteFile(filePath, file, 0666); err != nil {
+	if err = ioutil.WriteFile(cfs.FilePath, file, 0666); err != nil {
 		return fmt.Errorf("[secretsManager::vault] - io error: %v", err.Error())
 	}
 
@@ -126,15 +128,15 @@ type vaultModel struct {
 	Data          map[string]string `json:"data"`
 }
 
-func getKeys(path string) (*vaultModel, error) {
+func getKeys(cfs *Configs, path string) (*vaultModel, error) {
 	client := &http.Client{Timeout: time.Duration(1) * time.Second}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%v/v1/kv/%v", vaultHost, path), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/v1/kv/%v", cfs, path), nil)
 	if err != nil {
 		return nil, fmt.Errorf("[secretsManager::vault] - internal error: %v", err.Error())
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Vault-Token", vaultToken)
+	req.Header.Set("X-Vault-Token", cfs.VaultToken)
 
 	res, err := client.Do(req)
 	if err != nil {
