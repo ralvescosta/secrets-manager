@@ -12,12 +12,10 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:     "", // Vault Manager
+	Use:     "manager", // Vault Manager
 	Short:   "Secrets Replacer",
 	Long:    `This cli is responsable to merge your environment file with you vault secrets`,
 	Version: "0.0.1",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -32,13 +30,5 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

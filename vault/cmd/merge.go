@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
+// mergeCmd represents the base command when called without any subcommands
 var mergeCmd = &cobra.Command{
 	Use:   "merge", // Vault Manager
 	Short: "Merge you environment file",
@@ -21,14 +21,6 @@ var mergeCmd = &cobra.Command{
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
 	mergeCmd.Flags().StringP("file-path", "f", "", "Environment file path (required)")
 	mergeCmd.Flags().StringP("vault-separator", "s", "$vault.", "Vault separator pattern")
 	mergeCmd.Flags().StringP("path-key-value-separator", "p", ".", "Path and Key value separator pattern")
