@@ -1,3 +1,7 @@
+/*
+Copyright © 2022 Rafael Costa <rafael.rac.mg@gmail.com>
+
+*/
 package vault
 
 import (
@@ -29,25 +33,30 @@ type environment struct {
 	replacer   string
 }
 
-func Run(configs *Configs) {
+func Runner(configs *Configs) error {
 	envs, err := readEnvFile(configs)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("[Err] [secretesManager::vault::Runner]\n%e", err)
+		return err
 	}
 
 	if err := getVaultSecrets(configs, envs); err != nil {
-		log.Fatal(err)
+		log.Printf("[Err] [secretesManager::vault::Runner]\n%e", err)
+		return err
 	}
 
 	if err := updateEnvFile(configs, envs); err != nil {
-		log.Fatal(err)
+		log.Printf("[Err] [secretesManager::vault::Runner]\n%e", err)
+		return err
 	}
+
+	return nil
 }
 
-func readEnvFile(cfs *Configs) (map[string][]*environment, error) {
+var readEnvFile = func(cfs *Configs) (map[string][]*environment, error) {
 	file, err := os.Open(cfs.FilePath)
 	if err != nil {
-		return nil, fmt.Errorf("[secretsManager::vault] - io error: %v", err.Error())
+		return nil, fmt.Errorf("io error: %v", err.Error())
 	}
 	defer file.Close()
 
@@ -77,13 +86,13 @@ func readEnvFile(cfs *Configs) (map[string][]*environment, error) {
 		})
 	}
 	if scanner.Err() != nil {
-		return nil, fmt.Errorf("[secretsManager::vault] - file scanner error: %v", err.Error())
+		return nil, fmt.Errorf("file scanner error: %v", err.Error())
 	}
 
 	return envs, nil
 }
 
-func getVaultSecrets(cfs *Configs, envs map[string][]*environment) error {
+var getVaultSecrets = func(cfs *Configs, envs map[string][]*environment) error {
 	for key, values := range envs {
 		res, err := getKeys(cfs, key)
 		if err != nil {
@@ -102,10 +111,10 @@ func getVaultSecrets(cfs *Configs, envs map[string][]*environment) error {
 	return nil
 }
 
-func updateEnvFile(cfs *Configs, envs map[string][]*environment) error {
+var updateEnvFile = func(cfs *Configs, envs map[string][]*environment) error {
 	file, err := ioutil.ReadFile(cfs.FilePath)
 	if err != nil {
-		return fmt.Errorf("[secretsManager::vault] - io error: %v", err.Error())
+		return fmt.Errorf("io error: %v", err.Error())
 	}
 
 	for _, value := range envs {
@@ -115,7 +124,7 @@ func updateEnvFile(cfs *Configs, envs map[string][]*environment) error {
 	}
 
 	if err = ioutil.WriteFile(cfs.FilePath, file, 0666); err != nil {
-		return fmt.Errorf("[secretsManager::vault] - io error: %v", err.Error())
+		return fmt.Errorf("io error: %v", err.Error())
 	}
 
 	return nil
@@ -128,11 +137,11 @@ type vaultModel struct {
 	Data          map[string]string `json:"data"`
 }
 
-func getKeys(cfs *Configs, path string) (*vaultModel, error) {
+var getKeys = func(cfs *Configs, path string) (*vaultModel, error) {
 	client := &http.Client{Timeout: time.Duration(1) * time.Second}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%v/v1/kv/%v", cfs, path), nil)
 	if err != nil {
-		return nil, fmt.Errorf("[secretsManager::vault] - internal error: %v", err.Error())
+		return nil, fmt.Errorf("internal error: %v", err.Error())
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -140,19 +149,19 @@ func getKeys(cfs *Configs, path string) (*vaultModel, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("[secretsManager::vault] - erro whiling get KV: %v", err.Error())
+		return nil, fmt.Errorf("erro whiling get KV: %v", err.Error())
 	}
 	defer res.Body.Close()
 
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("[secretsManager::vault] - response parser error: %v", err.Error())
+		return nil, fmt.Errorf("response parser error: %v", err.Error())
 	}
 
 	body := &vaultModel{}
 	err = json.Unmarshal(data, body)
 	if err != nil {
-		return nil, fmt.Errorf("[secretsManager::vault] - response parser error: %v", err.Error())
+		return nil, fmt.Errorf("response parser error: %v", err.Error())
 	}
 
 	return body, nil
