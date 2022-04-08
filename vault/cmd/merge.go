@@ -13,7 +13,36 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func getVaultConfigs(flags *pflag.FlagSet) (*vault.Configs, error) {
+// mergeCmd represents the base command when called without any subcommands
+func NewMergeCmd(handler func(*vault.Configs) error) *cobra.Command {
+	var mergeCmd = &cobra.Command{
+		Use:   "merge", // Vault Manager
+		Short: "Merge you environment file",
+		Long:  `Example: cli -v https://vault -t validToken`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configs, err := getVaultConfigs(cmd.Flags())
+			if err != nil {
+				log.Printf("[Err] [secretesManager::merge::Execute]\n%e", err)
+				return err
+			}
+
+			return handler(configs)
+		},
+	}
+	mergeCmd.Flags().StringP("file-path", "f", "", "Environment file path (REQUIRED)")
+	mergeCmd.Flags().StringP("vault-separator", "s", "$vault.", "Vault separator pattern")
+	mergeCmd.Flags().StringP("path-key-value-separator", "p", ".", "Path and Key value separator pattern")
+	mergeCmd.Flags().StringP("file-key-value-separator", "q", "= ", "File key value separator pattern")
+	mergeCmd.Flags().StringP("vault-host", "v", "localhost:8200", "Vault Host")
+	mergeCmd.Flags().StringP("token", "t", "", "Vault Token (REQUIRED)")
+	mergeCmd.Flags().StringP("kv-version", "k", "1", "Key Value version")
+	mergeCmd.MarkFlagRequired("file-path")
+	mergeCmd.MarkFlagRequired("token")
+
+	return mergeCmd
+}
+
+var getVaultConfigs = func(flags *pflag.FlagSet) (*vault.Configs, error) {
 	filePath, err := flags.GetString("file-path")
 	if err != nil {
 		return nil, errors.New("flag filePath is required")
@@ -58,33 +87,4 @@ func getVaultConfigs(flags *pflag.FlagSet) (*vault.Configs, error) {
 		VaultToken:            vaultToken,
 		FileKeyValueSeparator: fileKeyValueSeparator,
 	}, nil
-}
-
-// mergeCmd represents the base command when called without any subcommands
-func NewMergeCmd(handler func(*vault.Configs) error) *cobra.Command {
-	var mergeCmd = &cobra.Command{
-		Use:   "merge", // Vault Manager
-		Short: "Merge you environment file",
-		Long:  `Example: cli -v https://vault -t validToken`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			configs, err := getVaultConfigs(cmd.Flags())
-			if err != nil {
-				log.Printf("[Err] [secretesManager::merge::Execute]\n%e", err)
-				return err
-			}
-
-			return handler(configs)
-		},
-	}
-	mergeCmd.Flags().StringP("file-path", "f", "", "Environment file path (REQUIRED)")
-	mergeCmd.Flags().StringP("vault-separator", "s", "$vault.", "Vault separator pattern")
-	mergeCmd.Flags().StringP("path-key-value-separator", "p", ".", "Path and Key value separator pattern")
-	mergeCmd.Flags().StringP("file-key-value-separator", "q", "= ", "File key value separator pattern")
-	mergeCmd.Flags().StringP("vault-host", "v", "localhost:8200", "Vault Host")
-	mergeCmd.Flags().StringP("token", "t", "", "Vault Token (REQUIRED)")
-	mergeCmd.Flags().StringP("kv-version", "k", "1", "Key Value version")
-	mergeCmd.MarkFlagRequired("file-path")
-	mergeCmd.MarkFlagRequired("token")
-
-	return mergeCmd
 }

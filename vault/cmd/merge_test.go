@@ -5,6 +5,7 @@ Copyright © 2022 Rafael Costa <rafael.rac.mg@gmail.com>
 package cmd
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/ralvescosta/secrets-manager/vault/pkg/vault"
@@ -12,13 +13,27 @@ import (
 )
 
 func Test_NewMergeCmd_should_execute_mergeCmd_correctly(t *testing.T) {
+	getVaultConfigs = func(flags *pflag.FlagSet) (*vault.Configs, error) {
+		return nil, nil
+	}
 	mergeCmd := NewMergeCmd(func(c *vault.Configs) error { return nil })
-	mergeCmd.Flags().Set("file-path", "path")
-	mergeCmd.Flags().Set("token", "token")
 
 	err := mergeCmd.Execute()
 
 	if err != nil {
+		t.Error()
+	}
+}
+
+func Test_NewMergeCmd_should_return_err_if_some_err_occur(t *testing.T) {
+	getVaultConfigs = func(flags *pflag.FlagSet) (*vault.Configs, error) {
+		return nil, errors.New("some error")
+	}
+	mergeCmd := NewMergeCmd(func(c *vault.Configs) error { return nil })
+
+	err := mergeCmd.Execute()
+
+	if err == nil {
 		t.Error()
 	}
 }
