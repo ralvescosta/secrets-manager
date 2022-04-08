@@ -53,7 +53,7 @@ func Runner(configs *Configs) error {
 	return nil
 }
 
-func readEnvFile(cfs *Configs) (map[string][]*environment, error) {
+var readEnvFile = func(cfs *Configs) (map[string][]*environment, error) {
 	file, err := os.Open(cfs.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("io error: %v", err.Error())
@@ -92,7 +92,7 @@ func readEnvFile(cfs *Configs) (map[string][]*environment, error) {
 	return envs, nil
 }
 
-func getVaultSecrets(cfs *Configs, envs map[string][]*environment) error {
+var getVaultSecrets = func(cfs *Configs, envs map[string][]*environment) error {
 	for key, values := range envs {
 		res, err := getKeys(cfs, key)
 		if err != nil {
@@ -111,7 +111,7 @@ func getVaultSecrets(cfs *Configs, envs map[string][]*environment) error {
 	return nil
 }
 
-func updateEnvFile(cfs *Configs, envs map[string][]*environment) error {
+var updateEnvFile = func(cfs *Configs, envs map[string][]*environment) error {
 	file, err := ioutil.ReadFile(cfs.FilePath)
 	if err != nil {
 		return fmt.Errorf("io error: %v", err.Error())
@@ -137,7 +137,7 @@ type vaultModel struct {
 	Data          map[string]string `json:"data"`
 }
 
-func getKeys(cfs *Configs, path string) (*vaultModel, error) {
+var getKeys = func(cfs *Configs, path string) (*vaultModel, error) {
 	client := &http.Client{Timeout: time.Duration(1) * time.Second}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%v/v1/kv/%v", cfs, path), nil)
 	if err != nil {
