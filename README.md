@@ -1,4 +1,4 @@
-# Secret Manager
+# Secrets Manager
 
 [In Progress]
 
