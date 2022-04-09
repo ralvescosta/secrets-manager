@@ -5,8 +5,6 @@ Copyright © 2022 Rafael Costa <rafael.rac.mg@gmail.com>
 package cmd
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
@@ -20,15 +18,7 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute(mergeCmd *cobra.Command) {
+func Execute(mergeCmd *cobra.Command) error {
 	rootCmd.AddCommand(mergeCmd)
-
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
-func init() {
-
+	return rootCmd.Execute()
 }
