@@ -33,9 +33,10 @@ func NewMergeCmd(handler func(*vault.Configs) error) *cobra.Command {
 	mergeCmd.Flags().StringP("vault-separator", "s", "$vault.", "Vault separator pattern")
 	mergeCmd.Flags().StringP("path-key-value-separator", "p", ".", "Path and Key value separator pattern")
 	mergeCmd.Flags().StringP("file-key-value-separator", "q", "= ", "File key value separator pattern")
-	mergeCmd.Flags().StringP("vault-host", "v", "localhost:8200", "Vault Host")
+	mergeCmd.Flags().StringP("vault-host", "v", "http://localhost:8200", "Vault Host")
 	mergeCmd.Flags().StringP("token", "t", "", "Vault Token (REQUIRED)")
-	mergeCmd.Flags().StringP("kv-version", "k", "1", "Key Value version")
+	mergeCmd.Flags().StringP("kv-version", "k", "2", "Key Value version")
+
 	mergeCmd.MarkFlagRequired("file-path")
 	mergeCmd.MarkFlagRequired("token")
 
