@@ -69,18 +69,16 @@ var readEnvFile = func(cfs *Configs) (map[string][]*environment, error) {
 		env := strings.Split(line, cfs.VaultSeparator)
 		pathAndKey := strings.Split(env[1], cfs.PathKeyValueSeparator)
 
-		vaultPath := ""
-		for i, v := range pathAndKey {
-			if i < len(pathAndKey)-1 {
-				if vaultPath == "" {
-					vaultPath = v
-				} else {
-					vaultPath += "/" + v
-				}
+		vaultPaths := ""
+		for i := 0; i < len(pathAndKey)-1; i++ {
+			if i < len(pathAndKey)-2 {
+				vaultPaths += pathAndKey[i] + "/"
+			} else {
+				vaultPaths += pathAndKey[i]
 			}
 		}
 
-		envs[pathAndKey[0]] = append(envs[pathAndKey[0]], &environment{
+		envs[vaultPaths] = append(envs[vaultPaths], &environment{
 			vaultKey: pathAndKey[len(pathAndKey)-1],
 			replacer: strings.Split(line, cfs.FileKeyValueSeparator)[1],
 		})
@@ -130,16 +128,16 @@ var updateEnvFile = func(cfs *Configs, envs map[string][]*environment) error {
 	return nil
 }
 
-type vaultModel struct {
-	RequestId     string            `json:"request_id"`
-	LeaseId       string            `json:"lease_id"`
-	LeaseDuration int               `json:"lease_duration"`
-	Data          map[string]string `json:"data"`
+type VaultModel struct {
+	RequestId     string
+	LeaseId       string
+	LeaseDuration int
+	Data          map[string]string
 }
 
-var getKeys = func(cfs *Configs, path string) (*vaultModel, error) {
+var getKeys = func(cfs *Configs, path string) (*VaultModel, error) {
 	client := &http.Client{Timeout: time.Duration(1) * time.Second}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%v/v1/kv/%v", cfs, path), nil)
+	req, err := http.NewRequest(http.MethodGet, getURL(cfs, path), nil)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %v", err.Error())
 	}
@@ -158,11 +156,78 @@ var getKeys = func(cfs *Configs, path string) (*vaultModel, error) {
 		return nil, fmt.Errorf("response parser error: %v", err.Error())
 	}
 
-	body := &vaultModel{}
-	err = json.Unmarshal(data, body)
-	if err != nil {
-		return nil, fmt.Errorf("response parser error: %v", err.Error())
+	return unmarshalVaultBody(cfs.KVVersion, data)
+}
+
+var getURL = func(cfs *Configs, path string) string {
+	switch cfs.KVVersion {
+	case "1":
+		return fmt.Sprintf("%v/v1/%v", cfs.VaultHost, path)
+	case "2":
+		s := strings.Split(path, "/")
+		r := cfs.VaultHost + "/v1/" + s[0] + "/data"
+		for i := 1; i < len(s); i++ {
+			if s[i] != "" {
+				r += "/" + s[i]
+			}
+		}
+		return r
+	default:
+		return cfs.VaultHost
+	}
+}
+
+func unmarshalVaultBody(version string, data []byte) (*VaultModel, error) {
+	var err error
+	switch version {
+	case "1":
+		bV1 := &VaultModelGen[VaultDataV1]{}
+		err = json.Unmarshal(data, bV1)
+		if err == nil {
+			return bV1.ToModel(), nil
+		}
+	case "2":
+		bV2 := &VaultModelGen[VaultDataV2]{}
+		err = json.Unmarshal(data, bV2)
+		if err == nil {
+			return bV2.ToModel(), nil
+		}
 	}
 
-	return body, nil
+	return nil, fmt.Errorf("response parser error: %e", err)
+}
+
+type VaultModelGen[D VaultDataGen] struct {
+	RequestId     string `json:"request_id"`
+	LeaseId       string `json:"lease_id"`
+	LeaseDuration int    `json:"lease_duration"`
+	Data          D      `json:"data"`
+}
+
+type VaultDataV1 map[string]string
+
+func (pst VaultDataV1) ToModel() map[string]string {
+	return pst
+}
+
+type VaultDataV2 struct {
+	Data map[string]string `json:"data"`
+}
+
+func (pst VaultDataV2) ToModel() map[string]string {
+	return pst.Data
+}
+
+type VaultDataGen interface {
+	VaultDataV1 | VaultDataV2
+	ToModel() map[string]string
+}
+
+func (pst VaultModelGen[D]) ToModel() *VaultModel {
+	return &VaultModel{
+		pst.RequestId,
+		pst.LeaseId,
+		pst.LeaseDuration,
+		pst.Data.ToModel(),
+	}
 }
