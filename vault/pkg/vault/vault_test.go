@@ -9,6 +9,34 @@ import (
 	"testing"
 )
 
+func Test_readEnvFile_read_file_correctly(t *testing.T) {
+	_, err := readEnvFile(&Configs{
+		FilePath: "../../../example/.env.development",
+	})
+
+	if err != nil {
+		t.Error()
+	}
+}
+
+func Test_updateEnvFile_update_file_correctly(t *testing.T) {
+	err := updateEnvFile(&Configs{
+		FilePath: "../../../example/.env.development",
+	}, map[string][]*environment{
+		"": {
+			{
+				vaultKey:   "",
+				vaultValue: "",
+				replacer:   "",
+			},
+		},
+	})
+
+	if err != nil {
+		t.Error()
+	}
+}
+
 func Test_Runner_should_execute_correctly(t *testing.T) {
 	readEnvFile = func(cfs *Configs) (map[string][]*environment, error) {
 		return make(map[string][]*environment), nil
