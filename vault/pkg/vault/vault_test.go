@@ -9,6 +9,12 @@ import (
 	"testing"
 )
 
+func Test_readEnvFile_read_file_correctly(t *testing.T) {
+	readEnvFile(&Configs{
+		FilePath: "../examples/.env.develop",
+	})
+}
+
 func Test_Runner_should_execute_correctly(t *testing.T) {
 	readEnvFile = func(cfs *Configs) (map[string][]*environment, error) {
 		return make(map[string][]*environment), nil
