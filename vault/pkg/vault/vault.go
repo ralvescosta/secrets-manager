@@ -17,14 +17,28 @@ import (
 	"time"
 )
 
+type KVVersion string
 type Configs struct {
 	FilePath              string
 	VaultSeparator        string
 	PathKeyValueSeparator string
-	KVVersion             string
+	KVVersion             KVVersion
 	VaultHost             string
 	VaultToken            string
 	FileKeyValueSeparator string
+}
+
+const (
+	KV1 KVVersion = "1"
+	KV2 KVVersion = "2"
+)
+
+func MapKVVersion(v string) KVVersion {
+	if v == "1" {
+		return KV1
+	}
+
+	return KV2
 }
 
 type environment struct {
@@ -177,16 +191,16 @@ var getURL = func(cfs *Configs, path string) string {
 	}
 }
 
-func unmarshalVaultBody(version string, data []byte) (*VaultModel, error) {
+func unmarshalVaultBody(v KVVersion, data []byte) (*VaultModel, error) {
 	var err error
-	switch version {
-	case "1":
+	switch v {
+	case KV1:
 		bV1 := &VaultModelGen[VaultDataV1]{}
 		err = json.Unmarshal(data, bV1)
 		if err == nil {
 			return bV1.ToModel(), nil
 		}
-	case "2":
+	case KV2:
 		bV2 := &VaultModelGen[VaultDataV2]{}
 		err = json.Unmarshal(data, bV2)
 		if err == nil {

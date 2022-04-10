@@ -83,7 +83,7 @@ var getVaultConfigs = func(flags *pflag.FlagSet) (*vault.Configs, error) {
 		FilePath:              filePath,
 		VaultSeparator:        vaultSeparator,
 		PathKeyValueSeparator: pathKeyValueSeparator,
-		KVVersion:             kvVersion,
+		KVVersion:             vault.MapKVVersion(kvVersion),
 		VaultHost:             vaultHost,
 		VaultToken:            vaultToken,
 		FileKeyValueSeparator: fileKeyValueSeparator,
